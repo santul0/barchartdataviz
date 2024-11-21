@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gráfico de Barras con D3</title>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    #chart {
+      margin: 50px auto;
+      width: 800px;
+      height: 500px;
+    }
+    .bar {
+      fill: steelblue;
+    }
+    .bar:hover {
+      fill: orange;
+    }
+    #tooltip {
+      position: absolute;
+      background-color: white;
+      border: 1px solid black;
+      padding: 5px;
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="title">Gráfico de Barras del PIB de EE.UU.</h1>
+  <div id="chart"></div>
+  <div id="tooltip" data-date=""></div>
+  <script>
+    const url = 'https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json';
+    
+    d3.json(url).then(data => {
+      const dataset = data.data;
+      const width = 800;
+      const height = 400;
+      const padding = 60;
+
+      const svg = d3.select("#chart")
+                    .append("svg")
+                    .attr("width", width + padding * 2)
+                    .attr("height", height + padding * 2)
+                    .append("g")
+                    .attr("transform", `translate(${padding}, ${padding})`);
+
+      const xScale = d3.scaleTime()
+                      .domain([d3.min(dataset, d => new Date(d[0])), d3.max(dataset, d => new Date(d[0]))])
+                      .range([0, width]);
+
+      const yScale = d3.scaleLinear()
+                      .domain([0, d3.max(dataset, d => d[1])])
+                      .range([height, 0]);
+
+      const xAxis = d3.axisBottom(xScale);
+      const yAxis = d3.axisLeft(yScale);
+
+      svg.append("g")
+         .attr("id", "x-axis")
+         .attr("transform", `translate(0, ${height})`)
+         .call(xAxis);
+
+      svg.append("g")
+         .attr("id", "y-axis")
+         .call(yAxis);
+
+      svg.selectAll(".bar")
+         .data(dataset)
+         .enter()
+         .append("rect")
+         .attr("class", "bar")
+         .attr("x", d => xScale(new Date(d[0])))
+         .attr("y", d => yScale(d[1]))
+         .attr("width", width / dataset.length)
+         .attr("height", d => height - yScale(d[1]))
+         .attr("data-date", d => d[0])
+         .attr("data-gdp", d => d[1])
+         .on("mouseover", (event, d) => {
+           d3.select("#tooltip")
+             .style("opacity", 1)
+             .style("left", (event.pageX + 5) + "px")
+             .style("top", (event.pageY - 28) + "px")
+             .attr("data-date", d[0])
+             .html(`Fecha: ${d[0]}<br>PIB: $${d[1]} Billones`);
+         })
+         .on("mouseout", () => {
+           d3.select("#tooltip")
+             .style("opacity", 0);
+         });
+    });
+  </script>
+</body>
+</html>
